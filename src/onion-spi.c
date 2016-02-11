@@ -26,11 +26,15 @@ int spiTransfer(int busNum, int devId, uint8_t *txBuffer, uint8_t *rxBuffer, int
 	if (status == EXIT_SUCCESS) {
 		
 		memset(&xfer, 0, sizeof(xfer));
-		xfer.tx_buf = (unsigned long)txBuffer;
-		xfer.rx_buf = (unsigned long)rxBuffer;
+		xfer.tx_buf = (unsigned long)*txBuffer;
+		xfer.rx_buf = (unsigned long)*rxBuffer;
 		xfer.len = bytes;
 
+		onionPrint(ONION_SEVERITY_DEBUG, "%s Trasferring 0x%02x, expecting %d bytes\n", SPI_PRINT_BANNER, xfer.tx_buf, xfer.len);
+
 		res = ioctl(fd, SPI_IOC_MESSAGE(1), &xfer);
+
+		onionPrint(ONION_SEVERITY_DEBUG, "   Received: 0x%02x, ioctl status: %d\n", xfer.rx_buf, res);
 	}
 
 	return res;
@@ -68,6 +72,7 @@ int _spi_getFd(int busNum, int devId, int *devHandle)
 
 	// create a file descriptor for the I2C bus
 	if ( (*devHandle = open(pathname, O_RDWR)) < 0) {
+		onionPrint(ONION_SEVERITY_FATAL, "ERROR: could not open sysfs device '%s'\n", pathname);
 		return 	EXIT_FAILURE;
 	}
 

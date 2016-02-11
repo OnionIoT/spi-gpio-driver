@@ -21,7 +21,7 @@
 #include <onion-debug.h>
 
 
-#define SPI_DEV_PATH		"/dev/spi-%d.%d"
+#define SPI_DEV_PATH		"/dev/spidev%d.%d"
 #define SPI_PRINT_BANNER	"onion-spi::"
 
 #define SPI_BUFFER_SIZE		32
