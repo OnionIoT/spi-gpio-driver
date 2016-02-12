@@ -21,11 +21,24 @@
 #include <onion-debug.h>
 
 
-#define SPI_DEV_PATH		"/dev/spidev%d.%d"
-#define SPI_PRINT_BANNER	"onion-spi::"
+#define SPI_DEV_PATH				"/dev/spidev%d.%d"
+#define SPI_PRINT_BANNER			"onion-spi::"
 
-#define SPI_BUFFER_SIZE		32
+#define SPI_BUFFER_SIZE				32
 
+#define SPI_DEFAULT_SPEED			100000
+#define SPI_DEFAULT_BITS_PER_WORD	8
+
+
+// type definitions
+struct spiParams {
+	int 	busNum;
+	int 	deviceId;
+
+	int		speedInHz;
+	int 	delayInUs;
+	int 	bitsPerWord;
+};
 
 // for debugging
 #ifndef __APPLE__
@@ -42,10 +55,12 @@ extern "C"{
 
 
 // spi functions
-int 	spiTransfer				(int busNum, int devId, uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);
+void 	spiParamInit			(struct spiParams *params);
+
+int 	spiTransfer				(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);
 
 
-int 	spi_readByte 			(int busNum, int devId, int addr, int *val);
+//int 	spi_readByte 			(int busNum, int devId, int addr, int *val);
 
 	/*
 int 	spi_writeBuffer			(int devNum, int devAddr, int addr, uint8_t *buffer, int size);
