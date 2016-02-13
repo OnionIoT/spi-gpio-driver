@@ -27,7 +27,8 @@
 #define SPI_BUFFER_SIZE				32
 
 #define SPI_DEFAULT_SPEED			100000
-#define SPI_DEFAULT_BITS_PER_WORD	8
+#define SPI_DEFAULT_BITS_PER_WORD	0 				// corresponds to 8 bits per word
+#define SPI_DEFAULT_MODE			(SPI_MODE_0 | SPI_TX_DUAL | SPI_RX_DUAL)
 
 
 // type definitions
@@ -38,6 +39,8 @@ struct spiParams {
 	int		speedInHz;
 	int 	delayInUs;
 	int 	bitsPerWord;
+
+	int 	mode;
 };
 
 // for debugging
@@ -56,6 +59,9 @@ extern "C"{
 
 // spi functions
 void 	spiParamInit			(struct spiParams *params);
+
+int 	spiRegisterDevice 		(struct spiParams *params);
+int 	spiInitDevice 			(struct spiParams *params);
 
 int 	spiTransfer				(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);
 

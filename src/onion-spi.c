@@ -22,6 +22,82 @@ void spiParamInit(struct spiParams *params)
 	params->speedInHz		= SPI_DEFAULT_SPEED;	
 	params->delayInUs		= 0;
 	params->bitsPerWord		= SPI_DEFAULT_BITS_PER_WORD;
+
+	params->mode 		 	= SPI_DEFAULT_MODE;
+}
+
+int spiRegisterDevice (struct spiParams *params)
+{
+	int 	status;
+
+	// LAZAR: implement this function
+	status 	= EXIT_SUCCESS;
+
+	return 	status;
+}
+
+int spiInitDevice (struct spiParams *params)
+{
+	int 	status, ret, fd;
+
+	// open the file handle
+	status 	= _spiGetFd(params->busNum, params->deviceId, &fd);
+
+	if (status == EXIT_SUCCESS) {
+		onionPrint(ONION_SEVERITY_INFO, "> Set SPI mode:      0x%x\n", params->mode);
+		onionPrint(ONION_SEVERITY_INFO, "> Set bits per word: %d\n", params->bitsPerWord);
+		onionPrint(ONION_SEVERITY_INFO, "> Set max speed:     %d Hz (%d KHz)\n", params->speedInHz, (params->speedInHz)/1000);
+
+
+		// set the SPI mode
+		ret = ioctl(fd, SPI_IOC_WR_MODE32, &(params->mode) );
+		if (ret == -1) {
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set SPI mode 0x%02x\n", params->mode);
+			return EXIT_FAILURE;
+		}
+		
+		ret = ioctl(fd, SPI_IOC_RD_MODE32, &(params->mode) );
+		if (ret == -1){
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set SPI mode 0x%02x\n", params->mode);
+			return EXIT_FAILURE;
+		}
+
+		// set the bits per word
+		ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &(params->bitsPerWord) );
+		if (ret == -1) {
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set %d bits per word\n", params->bitsPerWord);
+			return EXIT_FAILURE;
+		}
+		
+		ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &(params->bitsPerWord) );
+		if (ret == -1) {
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set %d bits per word\n", params->bitsPerWord);
+			return EXIT_FAILURE;
+		}
+		
+		// set max speed in Hz
+		ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &(params->speedInHz) );
+		if (ret == -1) {
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set max speed %d Hz\n", params->speedInHz);
+			return EXIT_FAILURE;
+		}
+		
+		ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &(params->speedInHz) );
+		if (ret == -1) {
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set max speed %d Hz\n", params->speedInHz);
+			return EXIT_FAILURE;
+		}
+		
+		onionPrint(ONION_SEVERITY_INFO, "> Set SPI mode:      0x%x\n", params->mode);
+		onionPrint(ONION_SEVERITY_INFO, "> Set bits per word: %d\n", params->bitsPerWord);
+		onionPrint(ONION_SEVERITY_INFO, "> Set max speed:     %d Hz (%d KHz)\n", params->speedInHz, (params->speedInHz)/1000);
+
+
+		// clean-up
+		status 	|= _spiReleaseFd(fd);
+	}
+
+	return 	status;
 }
 
 // perform a transfer
@@ -40,34 +116,54 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 	if (status == EXIT_SUCCESS) {
 		
 		memset(&xfer, 0, sizeof(xfer));
-		xfer.tx_buf 		= (unsigned long)txBuffer;
-		xfer.rx_buf 		= (unsigned long)rxBuffer;
+		xfer.tx_buf 			= (unsigned long)txBuffer;
+		xfer.rx_buf 			= (unsigned long)rxBuffer;
 		xfer.len 			= bytes;
 		xfer.speed_hz 		= params->speedInHz;
         xfer.delay_usecs 	= params->delayInUs;
         xfer.bits_per_word 	= params->bitsPerWord;
         xfer.cs_change 		= 0;
 
-		onionPrint(ONION_SEVERITY_DEBUG, "%s Trasferring 0x%02x, expecting %d bytes\n", SPI_PRINT_BANNER, *txBuffer, xfer.len);
+		/*if (params->mode & SPI_TX_QUAD)
+			xfer.tx_nbits = 4;
+		else if (params->mode & SPI_TX_DUAL)
+			xfer.tx_nbits = 2;
+		if (params->mode & SPI_RX_QUAD)
+			xfer.rx_nbits = 4;
+		else if (params->mode & SPI_RX_DUAL)
+			xfer.rx_nbits = 2;
+		if (!(params->mode & SPI_LOOP)) {
+			if (params->mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+				xfer.rx_buf = 0;
+			else if (params->mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+				xfer.tx_buf = 0;
+		}*/
+
+		onionPrint(ONION_SEVERITY_DEBUG, "%s Trasferring 0x%02x, %d byte%s\n", SPI_PRINT_BANNER, *txBuffer, bytes, (bytes > 1 ? "s" : "") );
 
 		// make the transfer
 		res = ioctl(fd, SPI_IOC_MESSAGE(bytes), &xfer);
 
 		// check the return
-		// LAZAR: implement
+		if (res < 1) {
+			// send failed
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: SPI transfer failed\n");
+			*rxBuffer 	= 0;
+			status	== EXIT_FAILURE;
+		}
 
 		onionPrint(ONION_SEVERITY_DEBUG, "   Received: 0x%02x, ioctl status: %d\n", *rxBuffer, res);
 
-		if (onionGetVerbosity() > ONION_SEVERITY_DEBUG) {
+		if (status == EXIT_SUCCESS && onionGetVerbosity() > ONION_SEVERITY_DEBUG ) {
 			hex_dump(txBuffer, bytes, 32, "TX");
 			hex_dump(rxBuffer, bytes, 32, "RX");
 		}
 
 		// clean-up
-		status 	= _spiReleaseFd(fd);
+		status 	|= _spiReleaseFd(fd);
 	}
 
-	return res;
+	return status;
 }
 
 /*

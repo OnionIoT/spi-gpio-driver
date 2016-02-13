@@ -8,13 +8,14 @@ void usage(const char* progName)
 int parseOptions(int argc, char** argv)
 {
 	int 	status	= EXIT_SUCCESS;
+	int 	ch;
 
 	static const struct option lopts[] = {
-		{ "device",		1, 0, 'D' },
-		{ "bus",		1, 0, 'D' },
+		{ "bus",		1, 0, 'b' },
+		{ "device",		1, 0, 'b' },
 		{ "speed",		1, 0, 's' },
 		{ "delay",		1, 0, 'd' },
-		{ "bpw",		1, 0, 'b' },
+		{ "bpw",		1, 0, 'B' },
 		{ "loop",		0, 0, 'l' },
 		{ "cpha",		0, 0, 'H' },
 		{ "cpol",		0, 0, 'O' },
@@ -88,7 +89,7 @@ int main(int argc, char** argv)
 	argv	+= optind;
 
 	//// parse the real arguments
-	if (argc >= 2 ) {
+	if (argc >= 1 ) {
 		// argument1 - find the mode
 		if (strcmp(argv[0], SPI_TOOL_COMMAND_READ) == 0) {
 			mode 	= SPI_TOOL_MODE_READ;
@@ -101,16 +102,17 @@ int main(int argc, char** argv)
 		}
 
 		// read the address
-		if 	(	mode == SPI_TOOL_MODE_READ ||
-				mode == SPI_TOOL_MODE_WRITE
+		if 	(	argc >= 2 &&
+				(mode == SPI_TOOL_MODE_READ ||
+				 mode == SPI_TOOL_MODE_WRITE)
 			)
 		{
 			sscanf (argv[1],"0x%02x", &addr);
 		}
 
 		// write mode: read the value to write
-		if 	(	mode == SPI_TOOL_MODE_WRITE &&
-				argc >= 3
+		if 	(	argc >= 3 &&
+				mode == SPI_TOOL_MODE_WRITE
 			)
 		{
 			sscanf (argv[2],"0x%02x", &value);
@@ -129,7 +131,11 @@ int main(int argc, char** argv)
 
 
 	//* program *//
-	if (mode == SPI_TOOL_MODE_READ) {
+	if (mode & SPI_TOOL_MODE_SETUP_DEVICE) {
+		status 		= spiRegisterDevice(&params);
+		status		= spiInitDevice(&params);
+	}
+	else if (mode & SPI_TOOL_MODE_READ) {
 		// make a call
 		size 		= 1;
 		txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
@@ -139,11 +145,14 @@ int main(int argc, char** argv)
 
 		status 	= spiTransfer(&params, txBuffer, rxBuffer, size);
 		onionPrint(ONION_SEVERITY_INFO, 	"> SPI Read from addr 0x%02x: 0x%02x\n", *txBuffer, *rxBuffer);
-		onionPrint(ONION_SEVERITY_DEBUG, 	"    spiTransfer status is: %d, read from addr 0x%02x: 0x%02x\n", status);
+		onionPrint(ONION_SEVERITY_DEBUG, 	"    spiTransfer status is: %d\n", status);
 
 		// clean-up
 		free(txBuffer);
 		free(rxBuffer);
+	}
+	else {
+		onionPrint(ONION_SEVERITY_FATAL, 	"ERROR: Invalid command!\n");
 	}
 	//status 	= spi_readByte (busNum, devId, addr, &value);
 	//onionPrint(ONION_SEVERITY_INFO, "spi_readByte status is: %d, read from addr 0x%02x: 0x%02x\n", status, addr, value);
