@@ -142,7 +142,7 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 		onionPrint(ONION_SEVERITY_DEBUG, "%s Trasferring 0x%02x, %d byte%s\n", SPI_PRINT_BANNER, *txBuffer, bytes, (bytes > 1 ? "s" : "") );
 
 		// make the transfer
-		res = ioctl(fd, SPI_IOC_MESSAGE(bytes), &xfer);
+		res = ioctl(fd, SPI_IOC_MESSAGE(1), &xfer);
 
 		// check the return
 		if (res < 1) {
