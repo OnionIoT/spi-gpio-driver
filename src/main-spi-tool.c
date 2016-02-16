@@ -4,18 +4,26 @@ void usage(const char* progName)
 {
 	printf("device-client: interface with Onion cloud device-server\n");
 }
-/*
+
 int parseOptions(int argc, char** argv)
 {
 	int 	status	= EXIT_SUCCESS;
 	int 	ch;
 
 	static const struct option lopts[] = {
-		{ "bus",		1, 0, 'b' },
-		{ "device",		1, 0, 'b' },
-		{ "speed",		1, 0, 's' },
-		{ "delay",		1, 0, 'd' },
-		{ "bpw",		1, 0, 'B' },
+		{ "bus",		required_argument, 	0, 'b' },
+		{ "device",		required_argument, 	0, 'd' },
+		{ "speed",		required_argument, 	0, 's' },
+		{ "delay",		required_argument, 	0, 'D' },
+		{ "bpw",		required_argument, 	0, 'B' },
+		{ "verbose",	no_argument, 		0, 'v' },
+
+		{ "sck",		required_argument, 	0, 'S' },
+		{ "mosi",		required_argument, 	0, 'O' },
+		{ "miso",		required_argument, 	0, 'I' },
+		{ "cs",			required_argument, 	0, 'C' },
+
+/*
 		{ "loop",		0, 0, 'l' },
 		{ "cpha",		0, 0, 'H' },
 		{ "cpol",		0, 0, 'O' },
@@ -25,13 +33,15 @@ int parseOptions(int argc, char** argv)
 		{ "no-cs",		0, 0, 'N' },
 		{ "ready",		0, 0, 'R' },
 		{ "dual",		0, 0, '2' },
-		{ "verbose",	0, 0, 'v' },
-		{ "quad",		0, 0, '4' },
+		{ "quad",		0, 0, '4' },*/
+
 		{ NULL, 0, 0, 0 },
 	};
 
+	// 
+
 	return 	status;
-}*/
+}
 
 int main(int argc, char** argv)
 {
@@ -133,7 +143,12 @@ int main(int argc, char** argv)
 	//* program *//
 	if (mode & SPI_TOOL_MODE_SETUP_DEVICE) {
 		status 		= spiRegisterDevice(&params);
-		status		= spiInitDevice(&params);
+		if (status == EXIT_SUCCESS) {
+			status		= spiInitDevice(&params);
+		}
+		else {
+			onionPrint(ONION_SEVERITY_FATAL, "> ERROR: could not register SPI sysfs device!\n");
+		}
 	}
 	else if (mode & SPI_TOOL_MODE_READ) {
 		// make a call

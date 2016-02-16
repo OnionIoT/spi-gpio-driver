@@ -24,12 +24,19 @@
 #define SPI_DEV_PATH				"/dev/spidev%d.%d"
 #define SPI_PRINT_BANNER			"onion-spi::"
 
+#define SPI_DEV_INSMOD_TEMPLATE 	"insmod spi-gpio-custom bus%d=%d,%d,%d,%d,%d,%d,%d"
+
 #define SPI_BUFFER_SIZE				32
 
 #define SPI_DEFAULT_SPEED			100000
 #define SPI_DEFAULT_BITS_PER_WORD	0 				// corresponds to 8 bits per word
-#define SPI_DEFAULT_MODE			(SPI_MODE_0 | SPI_TX_DUAL | SPI_RX_DUAL)
+#define SPI_DEFAULT_MODE 			SPI_MODE_0
+#define SPI_DEFAULT_MODE_BITS		(SPI_MODE_0 | SPI_TX_DUAL | SPI_RX_DUAL)
 
+#define SPI_DEFAULT_GPIO_SCK		6
+#define SPI_DEFAULT_GPIO_MOSI		18
+#define SPI_DEFAULT_GPIO_MISO		1
+#define SPI_DEFAULT_GPIO_CS			7
 
 // type definitions
 struct spiParams {
@@ -41,6 +48,12 @@ struct spiParams {
 	int 	bitsPerWord;
 
 	int 	mode;
+	int 	modeBits;
+
+	int 	sckGpio;
+	int 	mosiGpio;
+	int 	misoGpio;
+	int 	csGpio;
 };
 
 // for debugging

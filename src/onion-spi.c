@@ -1,8 +1,11 @@
 #include <onion-spi.h>
 
 // helper function prototypes
-int 	_spiGetFd				(int busNum, int devId, int *devHandle);
+int 	_spiGetFd				(int busNum, int devId, int *devHandle, int printSeverity);
 int 	_spiReleaseFd			(int devHandle);
+
+int 	_spiCheckDevice 		(int busNum, int devId, int printSeverity);
+int 	_spiRegisterDevice 		(int printSeverity, struct spiParams *params);
 
 int 	_spi_setDevice 			(int devHandle, int addr);
 int 	_spi_setDevice10bit 	(int devHandle, int addr);
@@ -24,14 +27,32 @@ void spiParamInit(struct spiParams *params)
 	params->bitsPerWord		= SPI_DEFAULT_BITS_PER_WORD;
 
 	params->mode 		 	= SPI_DEFAULT_MODE;
+	params->modeBits 		= SPI_DEFAULT_MODE_BITS;
+
+	params->sckGpio			= SPI_DEFAULT_GPIO_SCK;
+	params->mosiGpio		= SPI_DEFAULT_GPIO_MOSI;
+	params->misoGpio		= SPI_DEFAULT_GPIO_MISO;
+	params->csGpio			= SPI_DEFAULT_GPIO_CS;
 }
 
 int spiRegisterDevice (struct spiParams *params)
 {
 	int 	status;
 
-	// LAZAR: implement this function
-	status 	= EXIT_SUCCESS;
+	// check if device file is available
+	status	= _spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
+
+	if (status == EXIT_FAILURE) {
+		// device file does not exist - register the spi device
+		status	= _spiRegisterDevice(ONION_SEVERITY_INFO, params);
+
+		// check that device file exists
+		status	= _spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
+	}
+	else if (status == EXIT_SUCCESS) {
+		// device file exists - all good
+		onionPrint(ONION_SEVERITY_INFO, "> SPI device already available\n");
+	}
 
 	return 	status;
 }
@@ -41,24 +62,25 @@ int spiInitDevice (struct spiParams *params)
 	int 	status, ret, fd;
 
 	// open the file handle
-	status 	= _spiGetFd(params->busNum, params->deviceId, &fd);
+	status 	= _spiGetFd(params->busNum, params->deviceId, &fd, ONION_SEVERITY_DEBUG_EXTRA);
 
 	if (status == EXIT_SUCCESS) {
-		onionPrint(ONION_SEVERITY_INFO, "> Set SPI mode:      0x%x\n", params->mode);
-		onionPrint(ONION_SEVERITY_INFO, "> Set bits per word: %d\n", params->bitsPerWord);
-		onionPrint(ONION_SEVERITY_INFO, "> Set max speed:     %d Hz (%d KHz)\n", params->speedInHz, (params->speedInHz)/1000);
+		onionPrint(ONION_SEVERITY_INFO, "> Initializing SPI parameters...\n");
+		onionPrint(ONION_SEVERITY_INFO, "  > Set SPI mode:       0x%x\n", params->modeBits);
+		onionPrint(ONION_SEVERITY_INFO, "  > Set bits per word:  %d\n", params->bitsPerWord);
+		onionPrint(ONION_SEVERITY_INFO, "  > Set max speed:      %d Hz (%d KHz)\n", params->speedInHz, (params->speedInHz)/1000);
 
 
 		// set the SPI mode
-		ret = ioctl(fd, SPI_IOC_WR_MODE32, &(params->mode) );
+		ret = ioctl(fd, SPI_IOC_WR_MODE32, &(params->modeBits) );
 		if (ret == -1) {
-			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set SPI mode 0x%02x\n", params->mode);
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set SPI mode 0x%02x\n", params->modeBits);
 			return EXIT_FAILURE;
 		}
 		
-		ret = ioctl(fd, SPI_IOC_RD_MODE32, &(params->mode) );
+		ret = ioctl(fd, SPI_IOC_RD_MODE32, &(params->modeBits) );
 		if (ret == -1){
-			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set SPI mode 0x%02x\n", params->mode);
+			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set SPI mode 0x%02x\n", params->modeBits);
 			return EXIT_FAILURE;
 		}
 
@@ -87,11 +109,6 @@ int spiInitDevice (struct spiParams *params)
 			onionPrint(ONION_SEVERITY_FATAL, "ERROR: Cannot set max speed %d Hz\n", params->speedInHz);
 			return EXIT_FAILURE;
 		}
-		
-		onionPrint(ONION_SEVERITY_INFO, "> Set SPI mode:      0x%x\n", params->mode);
-		onionPrint(ONION_SEVERITY_INFO, "> Set bits per word: %d\n", params->bitsPerWord);
-		onionPrint(ONION_SEVERITY_INFO, "> Set max speed:     %d Hz (%d KHz)\n", params->speedInHz, (params->speedInHz)/1000);
-
 
 		// clean-up
 		status 	|= _spiReleaseFd(fd);
@@ -110,7 +127,7 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 	res 	= EXIT_FAILURE;
 
 	// open the file handle
-	status 	= _spiGetFd(params->busNum, params->deviceId, &fd);
+	status 	= _spiGetFd(params->busNum, params->deviceId, &fd, ONION_SEVERITY_FATAL);
 
 	// attempt the SPI transfter
 	if (status == EXIT_SUCCESS) {
@@ -184,7 +201,7 @@ int spi_readByte (int busNum, int devId, int addr, int *val)
 
 //// helper functions
 // get a handle to the device
-int _spiGetFd(int busNum, int devId, int *devHandle)
+int _spiGetFd(int busNum, int devId, int *devHandle, int printSeverity)
 {
 	int 	status;
 	char 	pathname[255];
@@ -200,7 +217,7 @@ int _spiGetFd(int busNum, int devId, int *devHandle)
 
 	// create a file descriptor for the I2C bus
 	if ( (*devHandle = open(pathname, O_RDWR)) < 0) {
-		onionPrint(ONION_SEVERITY_FATAL, "ERROR: could not open sysfs device '%s'\n", pathname);
+		onionPrint(printSeverity, "ERROR: could not open sysfs device '%s'\n", pathname);
 		return 	EXIT_FAILURE;
 	}
 
@@ -215,6 +232,61 @@ int _spiReleaseFd(int devHandle)
 	}
 
 	return EXIT_SUCCESS;
+}
+
+// check if a device file handle is available
+// returns:
+//	EXIT_SUCCESS 	if device file handle is available
+//	EXIT_FAILURE 	device file handle is not available
+int _spiCheckDevice(int busNum, int devId, int printSeverity)
+{
+	int 	status, fd;
+
+	// open the file
+	status	= _spiGetFd(busNum, devId, &fd, printSeverity);
+
+	// close the file
+	if (status == EXIT_SUCCESS) {
+		_spiReleaseFd(fd);
+	}
+
+	return status;
+}
+
+// register an SPI device
+int _spiRegisterDevice (int printSeverity, struct spiParams *params)
+{
+	int 	status;
+	char 	cmd[256];
+
+	onionPrint(printSeverity, "> Registering SPI device:\n");
+	onionPrint(printSeverity, "  > bus%d, device id: %d\n", params->busNum, params->deviceId);
+	onionPrint(printSeverity, "   > SCK:  GPIO%d\n", params->sckGpio);
+	onionPrint(printSeverity, "   > MOSI: GPIO%d\n", params->mosiGpio);
+	onionPrint(printSeverity, "   > MISO: GPIO%d\n", params->misoGpio);
+	onionPrint(printSeverity, "   > CS:   GPIO%d\n", params->csGpio);
+	onionPrint(printSeverity, "  > SPI Mode:      %d\n", params->mode);
+	onionPrint(printSeverity, "  > Max Frequency: %d Hz (%d kHz)\n", params->speedInHz, (params->speedInHz)/1000);
+
+	// generate the insmod command
+	sprintf(cmd, SPI_DEV_INSMOD_TEMPLATE, 	params->busNum, params->deviceId,
+											params->sckGpio,
+											params->mosiGpio,
+											params->misoGpio,
+											params->mode,
+											params->speedInHz,
+											params->csGpio
+			);
+	onionPrint(printSeverity+1, ">> Command:\n  %s\n", cmd);  
+
+	// call the insmod command to register an SPI device
+	status 	= system(cmd);
+	if (status < 0) {
+
+		return EXIT_FAILURE;
+	}
+
+	return 	EXIT_SUCCESS;
 }
 
 static void hex_dump(const void *src, size_t length, size_t line_size, char *prefix)
