@@ -70,25 +70,23 @@ extern "C"{
 
 
 
-// spi functions
+//// spi functions
+// initialize the spiParams structure to default values
 void 	spiParamInit			(struct spiParams *params);
 
+// check if an SPI device is mapped sysfs
+int 	spiCheckDevice 			(int busNum, int devId, int printSeverity);
+
+// register an SPI device with sysfs
 int 	spiRegisterDevice 		(struct spiParams *params);
+// setup paramaters of the sysfs SPI interface
 int 	spiInitDevice 			(struct spiParams *params);
 
+// transfer data through the SPI interface
 int 	spiTransfer				(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);
 
 
-//int 	spi_readByte 			(int busNum, int devId, int addr, int *val);
 
-	/*
-int 	spi_writeBuffer			(int devNum, int devAddr, int addr, uint8_t *buffer, int size);
-int 	spi_write	 			(int devNum, int devAddr, int addr, int val);
-int 	spi_writeBytes 			(int devNum, int devAddr, int addr, int val, int numBytes);
-
-int 	spi_read 				(int devNum, int devAddr, int addr, uint8_t *buffer, int numBytes);
-int 	spi_readByte 			(int devNum, int devAddr, int addr, int *val);
-*/
 
 #ifdef __cplusplus
 }

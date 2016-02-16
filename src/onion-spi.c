@@ -4,13 +4,7 @@
 int 	_spiGetFd				(int busNum, int devId, int *devHandle, int printSeverity);
 int 	_spiReleaseFd			(int devHandle);
 
-int 	_spiCheckDevice 		(int busNum, int devId, int printSeverity);
 int 	_spiRegisterDevice 		(int printSeverity, struct spiParams *params);
-
-int 	_spi_setDevice 			(int devHandle, int addr);
-int 	_spi_setDevice10bit 	(int devHandle, int addr);
-
-int 	_spi_writeBuffer		(int devNum, int devAddr, uint8_t *buffer, int size);
 
 static void hex_dump(const void *src, size_t length, size_t line_size, char *prefix);
 
@@ -35,19 +29,41 @@ void spiParamInit(struct spiParams *params)
 	params->csGpio			= SPI_DEFAULT_GPIO_CS;
 }
 
+// check if a device file handle is available
+// returns:
+//	EXIT_SUCCESS 	if device file handle is available
+//	EXIT_FAILURE 	device file handle is not available
+int spiCheckDevice(int busNum, int devId, int printSeverity)
+{
+	int 	status, fd;
+
+	// open the file
+	status	= _spiGetFd(busNum, devId, &fd, printSeverity);
+
+	// close the file
+	if (status == EXIT_SUCCESS) {
+		_spiReleaseFd(fd);
+	}
+
+	return status;
+}
+
+// check if a specific SPI device exists.
+//	if not, register it with sysfs
+// 	if it exists, do nothing
 int spiRegisterDevice (struct spiParams *params)
 {
 	int 	status;
 
 	// check if device file is available
-	status	= _spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
+	status	= spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
 
 	if (status == EXIT_FAILURE) {
 		// device file does not exist - register the spi device
 		status	= _spiRegisterDevice(ONION_SEVERITY_INFO, params);
 
 		// check that device file exists
-		status	= _spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
+		status	= spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
 	}
 	else if (status == EXIT_SUCCESS) {
 		// device file exists - all good
@@ -57,6 +73,7 @@ int spiRegisterDevice (struct spiParams *params)
 	return 	status;
 }
 
+// using ioctl, setup parameters of the sysfs SPI interface
 int spiInitDevice (struct spiParams *params)
 {
 	int 	status, ret, fd;
@@ -183,23 +200,8 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 	return status;
 }
 
-/*
-int spi_readByte (int busNum, int devId, int addr, int *val)
-{
-	int 	status;
-	uint8_t	addr8, value8;
 
-	addr8	= (uint8_t)addr;
-
-
-	status 	= spiTransfer(busNum, devId, &addr8, &value8, 1);
-	*val 	= (int)value8;
-
-	return 	status;
-}
-*/
-
-//// helper functions
+//// helper functions ////
 // get a handle to the device
 int _spiGetFd(int busNum, int devId, int *devHandle, int printSeverity)
 {
@@ -232,25 +234,6 @@ int _spiReleaseFd(int devHandle)
 	}
 
 	return EXIT_SUCCESS;
-}
-
-// check if a device file handle is available
-// returns:
-//	EXIT_SUCCESS 	if device file handle is available
-//	EXIT_FAILURE 	device file handle is not available
-int _spiCheckDevice(int busNum, int devId, int printSeverity)
-{
-	int 	status, fd;
-
-	// open the file
-	status	= _spiGetFd(busNum, devId, &fd, printSeverity);
-
-	// close the file
-	if (status == EXIT_SUCCESS) {
-		_spiReleaseFd(fd);
-	}
-
-	return status;
 }
 
 // register an SPI device
