@@ -1,36 +1,43 @@
 #include <main-spi-tool.h>
 
+int 	verbose;
+
 void usage(const char* progName) 
 {
-	printf("device-client: interface with Onion cloud device-server\n");
+	printf("spi-tool: interface devices using the SPI protocol\n");
 }
 
-int parseOptions(int argc, char** argv)
+int parseOptions(int argc, char** argv, struct spiParams *params)
 {
+	const char 	*progname;
 	int 	status	= EXIT_SUCCESS;
 	int 	ch;
 
+	int 	option_index = 0;
+
 	static const struct option lopts[] = {
+		{ "verbose",	no_argument, 		0, 'v' },
+		{ "quiet",		no_argument, 		0, 'q' },
+
 		{ "bus",		required_argument, 	0, 'b' },
 		{ "device",		required_argument, 	0, 'd' },
-		{ "speed",		required_argument, 	0, 's' },
+		{ "frequency",	required_argument, 	0, 's' },
 		{ "delay",		required_argument, 	0, 'D' },
 		{ "bpw",		required_argument, 	0, 'B' },
-		{ "verbose",	no_argument, 		0, 'v' },
 
+		{ "3wire",		no_argument, 		0, '3' },
+		{ "no-cs",		no_argument, 		0, 'N' },
+		
 		{ "sck",		required_argument, 	0, 'S' },
 		{ "mosi",		required_argument, 	0, 'O' },
 		{ "miso",		required_argument, 	0, 'I' },
 		{ "cs",			required_argument, 	0, 'C' },
 
-/*
-		{ "loop",		0, 0, 'l' },
+/*		{ "loop",		0, 0, 'l' },
 		{ "cpha",		0, 0, 'H' },
 		{ "cpol",		0, 0, 'O' },
 		{ "lsb",		0, 0, 'L' },
 		{ "cs-high",	0, 0, 'C' },
-		{ "3wire",		0, 0, '3' },
-		{ "no-cs",		0, 0, 'N' },
 		{ "ready",		0, 0, 'R' },
 		{ "dual",		0, 0, '2' },
 		{ "quad",		0, 0, '4' },*/
@@ -38,7 +45,73 @@ int parseOptions(int argc, char** argv)
 		{ NULL, 0, 0, 0 },
 	};
 
-	// 
+	// save the program name
+	progname 		= argv[0];
+
+	// parse the option arguments
+	while( (ch = getopt_long (argc, argv, "vqhb:d:s:D:B:S:O:I:C", lopts, &option_index)) != -1) {
+		switch (ch) {
+			case 'v':
+				// verbose output
+				verbose++;
+				break;
+			case 'q':
+				// quiet output
+				verbose = ONION_SEVERITY_FATAL;
+				break;
+
+			case 'b':
+				// set the bus number
+				params->busNum 		= atoi(optarg);
+				break;
+			case 'd':
+				// set the device id
+				params->deviceId	= atoi(optarg);
+				break;
+			case 's':
+				// set the transmission speed
+				params->speedInHz	= atoi(optarg);
+				break;
+			case 'D':
+				// set the delay
+				params->delayInUs	= atoi(optarg);
+				break;
+			case 'B':
+				// set the bits per word
+				params->bitsPerWord	= atoi(optarg);
+				break;
+
+			case '3':
+				// set the mode to 3-wire
+				params->modeBits	|= SPI_3WIRE;
+				break;
+			case 'N':
+				// set the mode to no CS pin
+				params->modeBits	|= SPI_NO_CS;
+				break;
+
+			case 'S':
+				// set the SCK gpio
+				params->sckGpio		= atoi(optarg);
+				break;
+			case 'O':
+				// set the MOSI gpio
+				params->mosiGpio	= atoi(optarg);
+				break;
+			case 'I':
+				// set the MISO gpio
+				params->misoGpio	= atoi(optarg);
+				break;
+			case 'C':
+				// set the CS gpio
+				params->csGpio		= atoi(optarg);
+				break;
+
+			default:
+				usage(progname);
+				return 0;
+		}
+	}
 
 	return 	status;
 }
@@ -48,7 +121,7 @@ int main(int argc, char** argv)
 	const char 	*progname;
 	int 		status;
 	int 		ch;
-	int 		verbose, debug, mode;
+	int 		debug, mode;
 
 	int 		addr;
 	int 		value;
@@ -63,6 +136,8 @@ int main(int argc, char** argv)
 	verbose 		= ONION_VERBOSITY_NORMAL;
 	debug 			= 0;
 	mode 			= SPI_TOOL_MODE_NONE;
+	addr 			= -1;
+	value 			= -1;
 
 	spiParamInit(&params);
 
@@ -70,29 +145,8 @@ int main(int argc, char** argv)
 	progname 		= argv[0];	
 
 
-	//// parse the option arguments
-	while ((ch = getopt(argc, argv, "vqhb:d:")) != -1) {
-		switch (ch) {
-			case 'v':
-				// verbose output
-				verbose++;
-				break;
-			case 'q':
-				// quiet output
-				verbose = ONION_SEVERITY_FATAL;
-				break;
-			case 'b':
-				// set the bus number
-				params.busNum 	= atoi(optarg);
-			case 'd':
-				// set the device id
-				params.deviceId	= atoi(optarg);
-				break;
-			default:
-				usage(progname);
-				return 0;
-		}
-	}
+	// parse the option arguments
+	parseOptions(argc, argv, &params);
 
 	// advance past the option arguments
 	argc 	-= optind;
@@ -127,11 +181,26 @@ int main(int argc, char** argv)
 		{
 			sscanf (argv[2],"0x%02x", &value);
 		}
-
-		// read device setup arguments
-		// LAZAR: implement this
 	}
 
+	// check the arguments
+	if 	(	addr < 0 &&
+			(mode == SPI_TOOL_MODE_READ ||
+			 mode == SPI_TOOL_MODE_WRITE)
+		)
+	{
+		onionPrint(ONION_SEVERITY_FATAL, "> ERROR: address argument required!\n\n");
+		usage(progname);
+		return 0;
+	}
+	if 	(	value < 0 &&
+			mode == SPI_TOOL_MODE_WRITE
+		)
+	{
+		onionPrint(ONION_SEVERITY_FATAL, "> ERROR: value argument required!\n\n");
+		usage(progname);
+		return 0;
+	}
 
 
 	///////////////////
