@@ -200,6 +200,55 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 	return status;
 }
 
+int spiWrite(struct spiParams *params, int addr, uint8_t *wrBuffer, int bytes)
+{
+	int 		status, i;
+	uint8_t 	*txBuffer;
+	uint8_t 	*rxBuffer;
+
+	// generate the transmission buffer
+	txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * (1+bytes) );
+	rxBuffer 	= (uint8_t*)malloc(sizeof(uint8_t) * (1+bytes) );
+
+	// load the address
+	txBuffer[0] = (uint8_t)addr;
+
+	// load the data to write
+	for (i = 0; i < bytes; i++) {
+		txBuffer[i+1] 	= wrBuffer[i];
+	}
+
+	// call the transfer
+	status 	= spiTransfer(params, txBuffer, rxBuffer, bytes+1);
+
+	// clean-up
+	free(txBuffer);
+	free(rxBuffer);
+
+	return 	status;
+}
+
+int spiRead(struct spiParams *params, int addr, uint8_t *rdBuffer, int bytes)
+{
+	int 		status, i;
+	uint8_t 	*txBuffer;
+	uint8_t 	*rxBuffer;
+
+	// generate the transmission buffer
+	txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * 1 );
+
+	// load the address
+	*txBuffer 	= (uint8_t)addr;
+
+	// call the transfer
+	status 	= spiTransfer(params, txBuffer, rdBuffer, bytes);
+
+	// clean-up
+	free(txBuffer);
+
+	return 	status;
+}
+
 
 //// helper functions ////
 // get a handle to the device

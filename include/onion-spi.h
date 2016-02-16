@@ -86,6 +86,8 @@ int 	spiInitDevice 			(struct spiParams *params);
 int 	spiTransfer				(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);
 
 
+int 	spiWrite				(struct spiParams *params, int addr, uint8_t *wrBuffer, int bytes);
+int 	spiRead					(struct spiParams *params, int addr, uint8_t *rdBuffer, int bytes);
 
 
 #ifdef __cplusplus

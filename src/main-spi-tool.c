@@ -234,12 +234,23 @@ int main(int argc, char** argv)
 		// clean-up
 		free(txBuffer);
 		free(rxBuffer);
+
+
+		/*size 		= 1;
+		rxBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
+
+		status 	= spiRead(&params, addr, rxBuffer, size);
+		onionPrint(ONION_SEVERITY_INFO, 	"> SPI Read from addr 0x%02x: 0x%02x\n", addr, *rxBuffer);
+		onionPrint(ONION_SEVERITY_DEBUG, 	"    spiRead status is: %d\n", status);
+
+		// clean-up
+		free(rxBuffer);*/
 	}
 	else if (mode & SPI_TOOL_MODE_WRITE) {
 		// make a call
 		size 		= 2;
 		txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
-		rxBuffer 	= (uint8_t*)malloc(sizeof(uint8_t) * size);;
+		rxBuffer 	= (uint8_t*)malloc(sizeof(uint8_t) * size);
 
 		txBuffer[0] = (uint8_t)addr;
 		txBuffer[1] = (uint8_t)value;
@@ -251,6 +262,18 @@ int main(int argc, char** argv)
 		// clean-up
 		free(txBuffer);
 		free(rxBuffer);
+
+		/*size 		= 1;
+		txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
+
+		*txBuffer 	= (uint8_t)value;
+
+		onionPrint(ONION_SEVERITY_INFO, 	"> SPI Write to addr 0x%02x: 0x%02x\n", addr, *txBuffer );
+		status 	= spiWrite(&params, addr, txBuffer, size);
+		onionPrint(ONION_SEVERITY_DEBUG, 	"    spiTransfer status is: %d\n", status);
+
+		// clean-up
+		free(txBuffer);*/
 	}
 	else {
 		onionPrint(ONION_SEVERITY_FATAL, 	"ERROR: Invalid command!\n");
