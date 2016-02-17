@@ -4,7 +4,37 @@ int 	verbose;
 
 void usage(const char* progName) 
 {
-	printf("spi-tool: interface devices using the SPI protocol\n");
+	onionPrint(ONION_SEVERITY_FATAL, "\n");
+	onionPrint(ONION_SEVERITY_FATAL, "spi-tool: interface devices using the SPI protocol\n");
+	onionPrint(ONION_SEVERITY_FATAL, "\n");
+
+	onionPrint(ONION_SEVERITY_FATAL, "Usage: spi-tool -b <bus number> -d <device ID> read <address>\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  Perform a read through the SPI protocol\n");
+	onionPrint(ONION_SEVERITY_FATAL, "\n");
+	
+	onionPrint(ONION_SEVERITY_FATAL, "Usage: spi-tool -b <bus number> -d <device ID> write <address> <value>\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  Perform a write through the SPI protocol\n");
+	onionPrint(ONION_SEVERITY_FATAL, "\n");
+
+	onionPrint(ONION_SEVERITY_FATAL, "Usage: spi-tool -b <bus number> -d <device ID> [options] setup\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  Setup a sysfs SPI handle, initialize SPI parameters \n");
+	onionPrint(ONION_SEVERITY_FATAL, "\n");
+	onionPrint(ONION_SEVERITY_FATAL, "Options:\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --frequency <Hz>         Set max SPI frequency\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --delay <us>             Set delay after the last bit transfered before optionally deselecting the device before the next transfer.\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --bpw <number>           Set number of bits per word\n");
+	
+	onionPrint(ONION_SEVERITY_FATAL, "  --sck <gpio>             Set GPIO for SPI SCK signal\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --mosi <gpio>            Set GPIO for SPI MOSI signal\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --miso <gpio>            Set GPIO for SPI MISO signal\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --cs <gpio>              Set GPIO for SPI CS signal\n");
+
+	onionPrint(ONION_SEVERITY_FATAL, "  --3wire                  SI/SO signals shared\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --no-cs                  No chip select signal\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --cs-high                Set chip select to active high\n");
+	onionPrint(ONION_SEVERITY_FATAL, "  --lsb                    Transmit Least Significant Bit first\n");
+
+	onionPrint(ONION_SEVERITY_FATAL, "\n");
 }
 
 int parseOptions(int argc, char** argv, struct spiParams *params)
@@ -27,6 +57,8 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 
 		{ "3wire",		no_argument, 		0, '3' },
 		{ "no-cs",		no_argument, 		0, 'N' },
+		{ "cs-high",	no_argument, 		0, 'H' },
+		{ "lsb",		no_argument, 		0, 'L' },
 		
 		{ "sck",		required_argument, 	0, 'S' },
 		{ "mosi",		required_argument, 	0, 'O' },
@@ -88,6 +120,14 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 			case 'N':
 				// set the mode to no CS pin
 				params->modeBits	|= SPI_NO_CS;
+				break;
+			case 'H':
+				// set the mode to CS active-high
+				params->modeBits	|= SPI_CS_HIGH;
+				break;
+			case 'L':
+				// set the mode to LSB first
+				params->modeBits	|= SPI_LSB_FIRST;
 				break;
 
 			case 'S':
@@ -184,20 +224,26 @@ int main(int argc, char** argv)
 	}
 
 	// check the arguments
+	if (mode == SPI_TOOL_MODE_NONE) {
+		onionPrint(ONION_SEVERITY_FATAL, "> ERROR: invalid command!\n\n");
+	}
 	if 	(	addr < 0 &&
 			(mode == SPI_TOOL_MODE_READ ||
 			 mode == SPI_TOOL_MODE_WRITE)
 		)
 	{
 		onionPrint(ONION_SEVERITY_FATAL, "> ERROR: address argument required!\n\n");
-		usage(progname);
-		return 0;
+		mode 	= SPI_TOOL_MODE_NONE;
 	}
 	if 	(	value < 0 &&
 			mode == SPI_TOOL_MODE_WRITE
 		)
 	{
 		onionPrint(ONION_SEVERITY_FATAL, "> ERROR: value argument required!\n\n");
+		mode 	= SPI_TOOL_MODE_NONE;
+	}
+
+	if (mode == SPI_TOOL_MODE_NONE) {
 		usage(progname);
 		return 0;
 	}
@@ -220,7 +266,7 @@ int main(int argc, char** argv)
 		}
 	}
 	else if (mode & SPI_TOOL_MODE_READ) {
-		// make a call
+		// make a transfer
 		size 		= 1;
 		txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
 		rxBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
@@ -234,20 +280,9 @@ int main(int argc, char** argv)
 		// clean-up
 		free(txBuffer);
 		free(rxBuffer);
-
-
-		/*size 		= 1;
-		rxBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
-
-		status 	= spiRead(&params, addr, rxBuffer, size);
-		onionPrint(ONION_SEVERITY_INFO, 	"> SPI Read from addr 0x%02x: 0x%02x\n", addr, *rxBuffer);
-		onionPrint(ONION_SEVERITY_DEBUG, 	"    spiRead status is: %d\n", status);
-
-		// clean-up
-		free(rxBuffer);*/
 	}
 	else if (mode & SPI_TOOL_MODE_WRITE) {
-		// make a call
+		// make a transfer
 		size 		= 2;
 		txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
 		rxBuffer 	= (uint8_t*)malloc(sizeof(uint8_t) * size);
@@ -262,24 +297,11 @@ int main(int argc, char** argv)
 		// clean-up
 		free(txBuffer);
 		free(rxBuffer);
-
-		/*size 		= 1;
-		txBuffer	= (uint8_t*)malloc(sizeof(uint8_t) * size);
-
-		*txBuffer 	= (uint8_t)value;
-
-		onionPrint(ONION_SEVERITY_INFO, 	"> SPI Write to addr 0x%02x: 0x%02x\n", addr, *txBuffer );
-		status 	= spiWrite(&params, addr, txBuffer, size);
-		onionPrint(ONION_SEVERITY_DEBUG, 	"    spiTransfer status is: %d\n", status);
-
-		// clean-up
-		free(txBuffer);*/
 	}
 	else {
 		onionPrint(ONION_SEVERITY_FATAL, 	"ERROR: Invalid command!\n");
 	}
-	//status 	= spi_readByte (busNum, devId, addr, &value);
-	//onionPrint(ONION_SEVERITY_INFO, "spi_readByte status is: %d, read from addr 0x%02x: 0x%02x\n", status, addr, value);
+	
 
 	//* clean-up *//
 	
