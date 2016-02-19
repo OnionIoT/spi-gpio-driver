@@ -2,19 +2,36 @@ import onionSpi
 import time
 
 
+def printSettings(obj):
+	print "SPI Device Settings:"
+	print "  bus:    %d"%(obj.bus)
+	print "  device: %d"%(obj.device)
+	print "  speed:    %d Hz (%d kHz)"%(obj.speed, obj.speed/1000)
+	print "  delay:    %d us"%(obj.delay)
+	print "  bpw:      %d"%(obj.bitsPerWord)
+	print "  mode:     %d (0x%02x)"%(obj.mode, obj.modeBits)
+	print "     3wire:    %d"%(obj.threewire)
+	print "     lsb:      %d"%(obj.lsbfirst)
+	print "     loop:     %d"%(obj.loop)
+	print "     no-cs:    %d"%(obj.noCs)
+	print "     cs-high:  %d"%(obj.csHigh)
+	print ""
+	print "GPIO Settings:"
+	print "  sck:      %d"%(obj.sck)
+	print "  mosi:     %d"%(obj.mosi)
+	print "  miso:     %d"%(obj.miso)
+	print "  cs:       %d"%(obj.cs)
+	print ""
+
 print 'Starting: onionSpi module testing...'
 
-spi 	= onionSpi.OnionSpi()
+spi 	= onionSpi.OnionSpi(0, 1)
 
 # set the verbosity
 spi.setVerbosity(1)
 
-
-# setup the bus number and device id
-bus 	= 0
-device 	= 1
-spi.setDevice(0, 1)
-print "setDevice returned"
+# read the device settings
+printSettings(spi)
 
 # perform a read
 size 	= 1
@@ -45,6 +62,13 @@ print "Reading from addr %02x"%(addr)
 rdBytes	= spi.readBytes(addr, size)
 print "readBytes return: ", rdBytes
 
+print ""
+ret = raw_input('Ready to change settings?')
+# change some settings and print again
+spi.cs = 20
+spi.threewire = 1
+spi.csHigh = 1
+printSettings(spi)
 
 
 print "Done"

@@ -121,31 +121,6 @@ onionSpi_setVerbosity(OnionSpiObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(onionSpi_setDevice_doc,
-	"setDevice(bus, device) -> None\n\n"
-	"Set the bus number and device ID for the object.\n");
-
-static PyObject *
-onionSpi_setDevice(OnionSpiObject *self, PyObject *args)
-{
-	int 		bus, device;
-
-
-	// parse the arguments
-	if (!PyArg_ParseTuple(args, "ii", &bus, &device) ) {
-		return NULL;
-	}
-
-	// update the parameters
-	self->params.busNum	= bus;
-	self->params.deviceId 	= device;
-	
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-
 PyDoc_STRVAR(onionSpi_readBytes_doc,
 	"readBytes(addr, bytes) -> [values]\n\n"
 	"Read 'bytes' bytes from address 'addr' on an SPI device.\n");
@@ -266,7 +241,515 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 	return Py_None;
 }
 
+/*
+ * 	Define the get and set functions for the parameters
+ */
 
+// pass in a python value, get a C int back
+//	returns -1 if conversion failed for whatever reason
+static int
+onionSpi_convertPyValToInt (PyObject *val)
+{
+	int 	cValue;
+
+	// check for a valid value
+	if (val == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+			"Cannot delete attribute");
+		return -1;
+	}
+
+	// convert the python value
+#if PY_MAJOR_VERSION < 3
+	if (PyInt_Check(val)) {
+		cValue = PyInt_AS_LONG(val);
+	} else
+#endif
+	{
+		if (PyLong_Check(val)) {
+			cValue = PyLong_AS_LONG(val);
+		} else {
+			PyErr_SetString(PyExc_TypeError,
+				"The attribute must be an integer");
+			return -1;
+		}
+	}
+
+	return 	cValue;
+}
+
+// bus 
+static PyObject *
+onionSpi_get_bus(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.busNum);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_bus(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.busNum = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// device 
+static PyObject *
+onionSpi_get_device(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.deviceId);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_device(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.deviceId = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// speed 
+static PyObject *
+onionSpi_get_speed(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.speedInHz);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_speed(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.speedInHz = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// delay
+static PyObject *
+onionSpi_get_delay(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.delayInUs);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_delay(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.delayInUs = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// bpw
+static PyObject *
+onionSpi_get_bpw(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.bitsPerWord);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_bpw(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.bitsPerWord = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+
+// mode
+static PyObject *
+onionSpi_get_mode(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.mode);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_mode(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.mode = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+
+// modeBits
+static PyObject *
+onionSpi_get_modeBits(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.modeBits);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_modeBits(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.modeBits = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// modeBits: 3-wire
+static PyObject *
+onionSpi_get_modeBits_3wire(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", ((self->params.modeBits & SPI_3WIRE) > 0 ? 1 : 0) );
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_modeBits_3wire(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		if (value > 0)
+			self->params.modeBits |= SPI_3WIRE;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// modeBits: lsbFirst
+static PyObject *
+onionSpi_get_modeBits_lsbfirst(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", ((self->params.modeBits & SPI_LSB_FIRST) > 0 ? 1 : 0) );
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_modeBits_lsbfirst(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		if (value > 0)
+			self->params.modeBits |= SPI_LSB_FIRST;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// modeBits: loopback
+static PyObject *
+onionSpi_get_modeBits_loop(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", ((self->params.modeBits & SPI_LOOP) > 0 ? 1 : 0) );
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_modeBits_loop(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		if (value > 0)
+			self->params.modeBits |= SPI_LOOP;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// modeBits: no-cs
+static PyObject *
+onionSpi_get_modeBits_noCs(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", ((self->params.modeBits & SPI_NO_CS) > 0 ? 1 : 0) );
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_modeBits_noCs(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		if (value > 0)
+			self->params.modeBits |= SPI_NO_CS;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// modeBits: no-cs
+static PyObject *
+onionSpi_get_modeBits_csHigh(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", ((self->params.modeBits & SPI_CS_HIGH) > 0 ? 1 : 0) );
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_modeBits_csHigh(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		if (value > 0)
+			self->params.modeBits |= SPI_CS_HIGH;
+		return 0;
+	}
+	
+	return -1;
+}
+
+
+// sckGpio
+static PyObject *
+onionSpi_get_sckGpio(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.sckGpio);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_sckGpio(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.sckGpio = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// mosiGpio
+static PyObject *
+onionSpi_get_mosiGpio(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.mosiGpio);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_mosiGpio(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.mosiGpio = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// misoGpio
+static PyObject *
+onionSpi_get_misoGpio(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.misoGpio);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_misoGpio(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.misoGpio = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+// csGpio
+static PyObject *
+onionSpi_get_csGpio(OnionSpiObject *self, void *closure)
+{
+	// create a python value from the integer
+	PyObject *result = Py_BuildValue("i", self->params.csGpio);
+	Py_INCREF(result);
+	return result;
+}
+
+static int
+onionSpi_set_csGpio(OnionSpiObject *self, PyObject *val, void *closure)
+{
+	uint32_t value;
+
+	// convert the python value
+	value 	= onionSpi_convertPyValToInt(val);
+
+	if (value != -1) {
+		self->params.csGpio = value;
+		return 0;
+	}
+	
+	return -1;
+}
+
+static PyGetSetDef onionSpi_getset[] = {
+	{"bus", (getter)onionSpi_get_bus, (setter)onionSpi_set_bus,
+			"SPI bus number\n"},
+	{"device", (getter)onionSpi_get_device, (setter)onionSpi_set_device,
+			"SPI device ID\n"},
+
+	{"speed", (getter)onionSpi_get_speed, (setter)onionSpi_set_speed,
+			"Maximum speed in Hz\n"},
+	{"delay", (getter)onionSpi_get_delay, (setter)onionSpi_set_delay,
+			"How long to delay in us after last bit transfer\n"
+			"before optionally deselecting the device before next transfer"},
+	{"bitsPerWord", (getter)onionSpi_get_bpw, (setter)onionSpi_get_bpw,
+			"Bits per word\n"},
+
+	{"mode", (getter)onionSpi_get_mode, (setter)onionSpi_set_mode,
+			"SPI mode as two bit pattern of \n"
+			"Clock Polarity  and Phase [CPOL|CPHA]\n"
+			"min: 0b00 = 0 max: 0b11 = 3\n"},
+
+	{"modeBits", (getter)onionSpi_get_modeBits, (setter)onionSpi_set_modeBits,
+			"Additional SPI mode bits to define additional options, like:\n"
+			"sending LSB first, set CS to active-high, no CS pin, \n"
+			"3 wire interface (SI/SO signals shared), loopback configuration\n"},
+
+	{"threewire", (getter)onionSpi_get_modeBits_3wire, (setter)onionSpi_set_modeBits_3wire,
+			"SI/SO signals shared\n"},
+	{"lsbfirst", (getter)onionSpi_get_modeBits_lsbfirst, (setter)onionSpi_set_modeBits_lsbfirst,
+			"LSB first\n"},
+	{"loop", (getter)onionSpi_get_modeBits_loop, (setter)onionSpi_set_modeBits_loop,
+			"loopback configuration\n"},
+	{"noCs", (getter)onionSpi_get_modeBits_noCs, (setter)onionSpi_set_modeBits_noCs,
+			"loopback configuration\n"},
+	{"csHigh", (getter)onionSpi_get_modeBits_csHigh, (setter)onionSpi_set_modeBits_csHigh,
+			"loopback configuration\n"},
+
+
+	{"sck", (getter)onionSpi_get_sckGpio, (setter)onionSpi_set_sckGpio,
+			"GPIO for SCK signal\n"},
+	{"mosi", (getter)onionSpi_get_mosiGpio, (setter)onionSpi_set_mosiGpio,
+			"GPIO for MOSI signal\n"},
+	{"miso", (getter)onionSpi_get_misoGpio, (setter)onionSpi_set_misoGpio,
+			"GPIO for MISO signal\n"},
+	{"cs", (getter)onionSpi_get_csGpio, (setter)onionSpi_set_csGpio,
+			"GPIO for CS signal\n"},
+
+	
+	{NULL} 		/* Sentinel */
+};
 
 ////// Python Module Setup //////
 /*
@@ -279,7 +762,6 @@ PyDoc_STRVAR(OnionSpiObjectType_doc,
 
 static PyMethodDef onionSpi_methods[] = {
 	{"setVerbosity", 	(PyCFunction)onionSpi_setVerbosity, 	METH_VARARGS, 		onionSpi_setVerbosity_doc},
-	{"setDevice", 		(PyCFunction)onionSpi_setDevice, 		METH_VARARGS, 		onionSpi_setDevice_doc},
 	{"readBytes", 		(PyCFunction)onionSpi_readBytes, 		METH_VARARGS, 		onionSpi_readBytes_doc},
 	{"writeBytes", 		(PyCFunction)onionSpi_writeBytes, 		METH_VARARGS, 		onionSpi_writeBytes_doc},
 	{NULL, NULL}	/* Sentinel */
@@ -324,8 +806,7 @@ static PyTypeObject OnionSpiObjectType = {
 	0,				/* tp_iternext */
 	onionSpi_methods,			/* tp_methods */
 	0,				/* tp_members */
-	0,	// LAZAR: implement this
-	//SpiDev_getset,			/* tp_getset */
+	onionSpi_getset,			/* tp_getset */
 	0,				/* tp_base */
 	0,				/* tp_dict */
 	0,				/* tp_descr_get */
