@@ -174,6 +174,10 @@ onionSpi_readBytes(OnionSpiObject *self, PyObject *args)
 	// perform the transfer
 	status 	= spiTransfer(&(self->params), txBuffer, rxBuffer, bytes);
 
+	if (status < 0) {
+		// LAZAR: ERROR MESSAGE
+	}
+
 	// build the python object to be returned from the rxBuffer
 	list = PyList_New(bytes);
 
@@ -191,6 +195,79 @@ onionSpi_readBytes(OnionSpiObject *self, PyObject *args)
 }
 
 
+PyDoc_STRVAR(onionSpi_writeBytes_doc,
+	"writeBytes(addr, value) -> None\n\n"
+	"Write bytes from 'value' list to address 'addr' on an SPI device.\n");
+
+static PyObject *
+onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
+{
+	int 		status, addr, bytes, i;
+	uint8_t 	*txBuffer;
+	uint8_t 	*rxBuffer;
+	PyObject	*list;
+
+
+	// parse the arguments
+	if (!PyArg_ParseTuple(args, "iO", &addr, &list) ) {
+		return NULL;
+	}
+
+	if (!PyList_Size(list) > 0) {
+		// LAZAR: ERROR MESSAGE
+		//PyErr_SetString(PyExc_TypeError, wrmsg_list0);
+		return NULL;
+	}
+
+	// find size of list
+	bytes 	= PyList_GET_SIZE(list);
+	bytes++;	// add one for the address
+
+	// allocate the buffers based on the number of bytes
+	txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+	rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+	// populate the address
+	txBuffer[0] 	= (uint8_t)addr;
+
+	// populate the values (by iterating through the list)
+	for (i = 0; i < (bytes-1); i++) {
+		PyObject *val = PyList_GET_ITEM(list, i);
+#if PY_MAJOR_VERSION < 3
+		if (PyInt_Check(val)) {
+			txBuffer[i+1] = (uint8_t)PyInt_AS_LONG(val);
+		} else
+#endif
+		{
+			if (PyLong_Check(val)) {
+				txBuffer[i+1] = (uint8_t)PyLong_AS_LONG(val);
+			} else {
+				// LAZAR: ERROR MESSAGE
+				//snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
+				//PyErr_SetString(PyExc_TypeError, wrmsg_text);
+				return NULL;
+			}
+		}
+	}
+
+	// perform the transfer
+	status 	= spiTransfer(&(self->params), txBuffer, rxBuffer, bytes);
+
+	if (status < 0) {
+		// LAZAR: ERROR MESSAGE
+	}
+
+	// clean-up
+	free(txBuffer);
+	free(rxBuffer);
+
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+
 ////// Python Module Setup //////
 /*
  * 	Bind Python function names to the C functions
@@ -204,6 +281,7 @@ static PyMethodDef onionSpi_methods[] = {
 	{"setVerbosity", 	(PyCFunction)onionSpi_setVerbosity, 	METH_VARARGS, 		onionSpi_setVerbosity_doc},
 	{"setDevice", 		(PyCFunction)onionSpi_setDevice, 		METH_VARARGS, 		onionSpi_setDevice_doc},
 	{"readBytes", 		(PyCFunction)onionSpi_readBytes, 		METH_VARARGS, 		onionSpi_readBytes_doc},
+	{"writeBytes", 		(PyCFunction)onionSpi_writeBytes, 		METH_VARARGS, 		onionSpi_writeBytes_doc},
 	{NULL, NULL}	/* Sentinel */
 };
 
