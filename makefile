@@ -9,15 +9,18 @@ INCDIR := include
 BUILDDIR := build
 BINDIR := bin
 LIBDIR := lib
+PYLIBDIR := lib/python
 
 
 # define common variables
 SRCEXT := c
-SOURCES := $(shell find $(SRCDIR) -type f \( -iname "*.$(SRCEXT)" ! -iname "*main-*.$(SRCEXT)" \) )
+SOURCES := $(shell find $(SRCDIR) -maxdepth 1 -type f \( -iname "*.$(SRCEXT)" ! -iname "*main-*.$(SRCEXT)" \) )
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g # -Wall
 INC := $(shell find $(INCDIR) -maxdepth 1 -type d -exec echo -I {}  \;)
 
+#PYINC := "-I/usr/include/python2.7"
+INC += $(PYINC)
 
 # define specific binaries to create
 LIB0 := libonionspi
@@ -32,8 +35,14 @@ OBJECT_APP0 := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCE_APP0:.$(SRCEXT)=.o)
 LIB_APP0 := -L$(LIBDIR) -loniondebug -lonionspi
 TARGET_APP0 := $(BINDIR)/$(APP0)
 
+PYLIB0 := onionSpi
+SOURCE_PYLIB0 := src/python/python-onion-spi.c
+OBJECT_PYLIB0 := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCE_PYLIB0:.$(SRCEXT)=.o))
+TARGET_PYLIB0 := $(PYLIBDIR)/$(PYLIB0).so
+LIB_PYLIB0 := -L$(LIBDIR) -loniondebug -lonionspi -lpython2.7
 
-all: info $(TARGET_LIB0) $(TARGET_APP0)
+
+all: info $(TARGET_LIB0) $(TARGET_APP0) $(TARGET_PYLIB0)
 
 
 # libraries
@@ -41,6 +50,12 @@ $(TARGET_LIB0): $(OBJECT_LIB0)
 	@echo " Compiling $@"
 	@mkdir -p $(LIBDIR)
 	$(CC) -shared -o $@  $^ $(LIB_LIB0)
+
+# python libraries
+$(TARGET_PYLIB0): $(OBJECT_PYLIB0)
+	@echo " Compiling $@"
+	@mkdir -p $(PYLIBDIR)
+	$(CC) -shared -o $@  $^ $(LIB_PYLIB0)
 
 # application binaries
 $(TARGET_APP0): $(OBJECT_APP0)
