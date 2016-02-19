@@ -54,11 +54,13 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 		{ "frequency",	required_argument, 	0, 's' },
 		{ "delay",		required_argument, 	0, 'D' },
 		{ "bpw",		required_argument, 	0, 'B' },
+		{ "mode",		required_argument, 	0, 'm' },
 
 		{ "3wire",		no_argument, 		0, '3' },
 		{ "no-cs",		no_argument, 		0, 'N' },
 		{ "cs-high",	no_argument, 		0, 'H' },
 		{ "lsb",		no_argument, 		0, 'L' },
+		{ "loop",		no_argument, 		0, 'l' },
 		
 		{ "sck",		required_argument, 	0, 'S' },
 		{ "mosi",		required_argument, 	0, 'O' },
@@ -112,6 +114,10 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 				// set the bits per word
 				params->bitsPerWord	= atoi(optarg);
 				break;
+			case 'm':
+				// set the SPI Mode
+				params->mode		= atoi(optarg);
+				break;
 
 			case '3':
 				// set the mode to 3-wire
@@ -128,6 +134,10 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 			case 'L':
 				// set the mode to LSB first
 				params->modeBits	|= SPI_LSB_FIRST;
+				break;
+			case 'l':
+				// set the mode to loopback
+				params->modeBits	|= SPI_LOOP;
 				break;
 
 			case 'S':
