@@ -92,6 +92,22 @@ rdBytes	= spi.readBytes(addr, size)
 print "readBytes return: ", rdBytes
 
 
+print ""
+ret = raw_input('Ready to test write() function?')
+
+# perform a write using the other write function
+values 	= [0x02, 0x0c]
+print "Writing 2 bytes"
+wrBytes = spi.write(values)
+print "write return: ", wrBytes
+
+# perform a read 
+size 	= 1
+addr 	= int((0x01 << 1) | 0x80)
+print "Reading from addr %02x"%(addr)
+rdBytes	= spi.readBytes(addr, size)
+print "readBytes return: ", rdBytes
+
 
 print ""
 ret = raw_input('Ready to change settings?')

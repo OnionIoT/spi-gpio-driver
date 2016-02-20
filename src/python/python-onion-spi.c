@@ -171,7 +171,7 @@ onionSpi_readBytes(OnionSpiObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(onionSpi_writeBytes_doc,
-	"writeBytes(addr, value) -> None\n\n"
+	"writeBytes(addr, [values]) -> None\n\n"
 	"Write bytes from 'value' list to address 'addr' on an SPI device.\n");
 
 static PyObject *
@@ -216,6 +216,73 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 		{
 			if (PyLong_Check(val)) {
 				txBuffer[i+1] = (uint8_t)PyLong_AS_LONG(val);
+			} else {
+				// LAZAR: ERROR MESSAGE
+				//snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
+				//PyErr_SetString(PyExc_TypeError, wrmsg_text);
+				return NULL;
+			}
+		}
+	}
+
+	// perform the transfer
+	status 	= spiTransfer(&(self->params), txBuffer, rxBuffer, bytes);
+
+	if (status < 0) {
+		// LAZAR: ERROR MESSAGE
+	}
+
+	// clean-up
+	free(txBuffer);
+	free(rxBuffer);
+
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(onionSpi_write_doc,
+	"write([values]) -> None\n\n"
+	"Write bytes from 'value' list to address 'addr' on an SPI device.\n");
+
+static PyObject *
+onionSpi_write(OnionSpiObject *self, PyObject *args)
+{
+	int 		status, bytes, i;
+	uint8_t 	*txBuffer;
+	uint8_t 	*rxBuffer;
+	PyObject	*list;
+
+
+	// parse the arguments
+	if (!PyArg_ParseTuple(args, "O", &list) ) {
+		return NULL;
+	}
+
+	if (!PyList_Size(list) > 0) {
+		// LAZAR: ERROR MESSAGE
+		//PyErr_SetString(PyExc_TypeError, wrmsg_list0);
+		return NULL;
+	}
+
+	// find size of list
+	bytes 	= PyList_GET_SIZE(list);
+
+	// allocate the buffers based on the number of bytes
+	txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+	rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+	// populate the values (by iterating through the list)
+	for (i = 0; i < bytes; i++) {
+		PyObject *val = PyList_GET_ITEM(list, i);
+#if PY_MAJOR_VERSION < 3
+		if (PyInt_Check(val)) {
+			txBuffer[i] = (uint8_t)PyInt_AS_LONG(val);
+		} else
+#endif
+		{
+			if (PyLong_Check(val)) {
+				txBuffer[i] = (uint8_t)PyLong_AS_LONG(val);
 			} else {
 				// LAZAR: ERROR MESSAGE
 				//snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
@@ -835,6 +902,9 @@ static PyMethodDef onionSpi_methods[] = {
 
 	{"readBytes", 		(PyCFunction)onionSpi_readBytes, 		METH_VARARGS, 		onionSpi_readBytes_doc},
 	{"writeBytes", 		(PyCFunction)onionSpi_writeBytes, 		METH_VARARGS, 		onionSpi_writeBytes_doc},
+
+	{"write", 			(PyCFunction)onionSpi_write, 			METH_VARARGS, 		onionSpi_write_doc},
+
 	{NULL, NULL}	/* Sentinel */
 };
 
