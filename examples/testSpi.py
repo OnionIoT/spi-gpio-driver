@@ -33,6 +33,35 @@ spi.setVerbosity(1)
 # read the device settings
 printSettings(spi)
 
+
+
+print ""
+ret = raw_input('Ready to register the device?')
+
+# check the device
+print 'Checking if device exists...'
+ret = spi.checkDevice()
+print '   Device does not exist: %d'%(ret)
+
+# register the device
+print 'Registering the device...'
+ret = spi.registerDevice()
+print '   registerDevice returned: %d'%(ret)
+
+# initialize the device parameters
+print 'Initializing the device parameters...'
+ret = spi.initDevice()
+print '   initDevice returned: %d'%(ret)
+
+# check the device again
+print '\nChecking if device exists...'
+ret = spi.checkDevice()
+print '   Device does not exist: %d'%(ret)
+
+
+print ""
+ret = raw_input('Ready to test reading and writing?')
+
 # perform a read
 size 	= 1
 addr 	= int((0x37 << 1) | 0x80)
@@ -62,8 +91,11 @@ print "Reading from addr %02x"%(addr)
 rdBytes	= spi.readBytes(addr, size)
 print "readBytes return: ", rdBytes
 
+
+
 print ""
 ret = raw_input('Ready to change settings?')
+
 # change some settings and print again
 spi.cs = 20
 spi.threewire = 1

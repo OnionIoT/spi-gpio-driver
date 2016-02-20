@@ -241,6 +241,72 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 	return Py_None;
 }
 
+PyDoc_STRVAR(onionSpi_checkDevice_doc,
+	"checkDevice() -> 0|1\n\n"
+	"Check if SPI device has a sysfs interface.\n"
+	"Returns 0 if sysfs interface is mapped\n"
+	"Returns 1 if not mapped\n");
+
+static PyObject *
+onionSpi_checkDevice(OnionSpiObject *self, PyObject *args)
+{
+	int 		bNoDevice;
+	PyObject 	*result;
+
+	// check the device
+	bNoDevice 	= spiCheckDevice(self->params.busNum, self->params.deviceId, ONION_SEVERITY_DEBUG_EXTRA);
+
+	// create the python value
+	result 		= Py_BuildValue("i", bNoDevice);
+
+	Py_INCREF(result);
+	return result;
+}
+
+PyDoc_STRVAR(onionSpi_registerDevice_doc,
+	"registerDevice() -> 0|1\n\n"
+	"If SPI device does not have a sysfs interface,\n"
+	"register the SPI device\n"
+	"Does nothing if the sysfs interface exists\n");
+
+static PyObject *
+onionSpi_registerDevice(OnionSpiObject *self, PyObject *args)
+{
+	int 		status;
+	PyObject 	*result;
+
+	// check the device
+	status 		= spiRegisterDevice(&(self->params));
+
+	// create the python value
+	result 		= Py_BuildValue("i", status);
+	
+	Py_INCREF(result);
+	return result;
+}
+
+PyDoc_STRVAR(onionSpi_initDevice_doc,
+	"initDevice() -> 0|1\n\n"
+	"Set the following SPI parameters on the sysfs interface:\n"
+	" mode, bits per word, max speed\n");
+
+static PyObject *
+onionSpi_initDevice(OnionSpiObject *self, PyObject *args)
+{
+	int 		status;
+	PyObject 	*result;
+
+	// check the device
+	status 		= spiInitDevice(&(self->params));
+
+	// create the python value
+	result 		= Py_BuildValue("i", status);
+	
+	Py_INCREF(result);
+	return result;
+}
+
+
 /*
  * 	Define the get and set functions for the parameters
  */
@@ -762,6 +828,11 @@ PyDoc_STRVAR(OnionSpiObjectType_doc,
 
 static PyMethodDef onionSpi_methods[] = {
 	{"setVerbosity", 	(PyCFunction)onionSpi_setVerbosity, 	METH_VARARGS, 		onionSpi_setVerbosity_doc},
+	
+	{"checkDevice", 	(PyCFunction)onionSpi_checkDevice, 		METH_VARARGS, 		onionSpi_checkDevice_doc},
+	{"registerDevice", 	(PyCFunction)onionSpi_registerDevice, 	METH_VARARGS, 		onionSpi_registerDevice_doc},
+	{"initDevice", 		(PyCFunction)onionSpi_initDevice, 		METH_VARARGS, 		onionSpi_initDevice_doc},
+
 	{"readBytes", 		(PyCFunction)onionSpi_readBytes, 		METH_VARARGS, 		onionSpi_readBytes_doc},
 	{"writeBytes", 		(PyCFunction)onionSpi_writeBytes, 		METH_VARARGS, 		onionSpi_writeBytes_doc},
 	{NULL, NULL}	/* Sentinel */
