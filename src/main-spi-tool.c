@@ -269,7 +269,7 @@ int main(int argc, char** argv)
 	if (mode & SPI_TOOL_MODE_SETUP_DEVICE) {
 		status 		= spiRegisterDevice(&params);
 		if (status == EXIT_SUCCESS) {
-			status		= spiInitDevice(&params);
+			status		= spiSetupDevice(&params);
 		}
 		else {
 			onionPrint(ONION_SEVERITY_FATAL, "> ERROR: could not register SPI sysfs device!\n");

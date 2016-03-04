@@ -122,8 +122,8 @@ onionSpi_setVerbosity(OnionSpiObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(onionSpi_readBytes_doc,
-	"readBytes(addr, bytes) -> [values]\n\n"
-	"Read 'bytes' bytes from address 'addr' on an SPI device.\n");
+	"readBytes(addr, numBytes) -> [values]\n\n"
+	"Read 'numBytes' bytes from address 'addr' on an SPI device.\n");
 
 static PyObject *
 onionSpi_readBytes(OnionSpiObject *self, PyObject *args)
@@ -352,19 +352,19 @@ onionSpi_registerDevice(OnionSpiObject *self, PyObject *args)
 	return result;
 }
 
-PyDoc_STRVAR(onionSpi_initDevice_doc,
-	"initDevice() -> 0|1\n\n"
+PyDoc_STRVAR(onionSpi_setupDevice_doc,
+	"setupDevice() -> 0|1\n\n"
 	"Set the following SPI parameters on the sysfs interface:\n"
 	" mode, bits per word, max speed\n");
 
 static PyObject *
-onionSpi_initDevice(OnionSpiObject *self, PyObject *args)
+onionSpi_setupDevice(OnionSpiObject *self, PyObject *args)
 {
 	int 		status;
 	PyObject 	*result;
 
 	// check the device
-	status 		= spiInitDevice(&(self->params));
+	status 		= spiSetupDevice(&(self->params));
 
 	// create the python value
 	result 		= Py_BuildValue("i", status);
@@ -866,9 +866,9 @@ static PyGetSetDef onionSpi_getset[] = {
 	{"loop", (getter)onionSpi_get_modeBits_loop, (setter)onionSpi_set_modeBits_loop,
 			"loopback configuration\n"},
 	{"noCs", (getter)onionSpi_get_modeBits_noCs, (setter)onionSpi_set_modeBits_noCs,
-			"loopback configuration\n"},
+			"no CS pin\n"},
 	{"csHigh", (getter)onionSpi_get_modeBits_csHigh, (setter)onionSpi_set_modeBits_csHigh,
-			"loopback configuration\n"},
+			"CS is active-high\n"},
 
 
 	{"sck", (getter)onionSpi_get_sckGpio, (setter)onionSpi_set_sckGpio,
@@ -898,7 +898,7 @@ static PyMethodDef onionSpi_methods[] = {
 	
 	{"checkDevice", 	(PyCFunction)onionSpi_checkDevice, 		METH_VARARGS, 		onionSpi_checkDevice_doc},
 	{"registerDevice", 	(PyCFunction)onionSpi_registerDevice, 	METH_VARARGS, 		onionSpi_registerDevice_doc},
-	{"initDevice", 		(PyCFunction)onionSpi_initDevice, 		METH_VARARGS, 		onionSpi_initDevice_doc},
+	{"setupDevice", 	(PyCFunction)onionSpi_setupDevice, 		METH_VARARGS, 		onionSpi_setupDevice_doc},
 
 	{"readBytes", 		(PyCFunction)onionSpi_readBytes, 		METH_VARARGS, 		onionSpi_readBytes_doc},
 	{"writeBytes", 		(PyCFunction)onionSpi_writeBytes, 		METH_VARARGS, 		onionSpi_writeBytes_doc},

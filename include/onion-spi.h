@@ -80,7 +80,7 @@ int 	spiCheckDevice 			(int busNum, int devId, int printSeverity);
 // register an SPI device with sysfs
 int 	spiRegisterDevice 		(struct spiParams *params);
 // setup paramaters of the sysfs SPI interface
-int 	spiInitDevice 			(struct spiParams *params);
+int 	spiSetupDevice 			(struct spiParams *params);
 
 // transfer data through the SPI interface
 int 	spiTransfer				(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, int bytes);

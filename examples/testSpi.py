@@ -50,8 +50,8 @@ print '   registerDevice returned: %d'%(ret)
 
 # initialize the device parameters
 print 'Initializing the device parameters...'
-ret = spi.initDevice()
-print '   initDevice returned: %d'%(ret)
+ret = spi.setupDevice()
+print '   setupDevice returned: %d'%(ret)
 
 # check the device again
 print '\nChecking if device exists...'
@@ -67,7 +67,7 @@ size 	= 1
 addr 	= int((0x37 << 1) | 0x80)
 print "Reading from addr %02x"%(addr)
 rdBytes	= spi.readBytes(addr, size)
-print "readBytes return: ", rdBytes
+print "readBytes return: ", rdBytes, " first element: ", rdBytes[0]
 
 
 # perform a read 

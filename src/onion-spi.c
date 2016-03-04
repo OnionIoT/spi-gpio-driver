@@ -73,8 +73,8 @@ int spiRegisterDevice (struct spiParams *params)
 	return 	status;
 }
 
-// using ioctl, setup parameters of the sysfs SPI interface
-int spiInitDevice (struct spiParams *params)
+// using ioctl, setup parameters of the SPI device interface
+int spiSetupDevice (struct spiParams *params)
 {
 	int 	status, ret, fd;
 
