@@ -40,7 +40,6 @@ void usage(const char* progName)
 int parseOptions(int argc, char** argv, struct spiParams *params)
 {
 	const char 	*progname;
-	int 	status	= EXIT_SUCCESS;
 	int 	ch;
 
 	int 	option_index = 0;
@@ -67,16 +66,7 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 		{ "miso",		required_argument, 	0, 'I' },
 		{ "cs",			required_argument, 	0, 'C' },
 
-/*		{ "loop",		0, 0, 'l' },
-		{ "cpha",		0, 0, 'H' },
-		{ "cpol",		0, 0, 'O' },
-		{ "lsb",		0, 0, 'L' },
-		{ "cs-high",	0, 0, 'C' },
-		{ "ready",		0, 0, 'R' },
-		{ "dual",		0, 0, '2' },
-		{ "quad",		0, 0, '4' },*/
-
-		{ NULL, 0, 0, 0 },
+		{ NULL, 0, 0, 0 },	// sentinel
 	};
 
 	// save the program name
@@ -159,11 +149,11 @@ int parseOptions(int argc, char** argv, struct spiParams *params)
 
 			default:
 				usage(progname);
-				return 0;
+				return EXIT_FAILURE;
 		}
 	}
 
-	return 	status;
+	return EXIT_SUCCESS;
 }
 
 int main(int argc, char** argv)
@@ -196,7 +186,10 @@ int main(int argc, char** argv)
 
 
 	// parse the option arguments
-	parseOptions(argc, argv, &params);
+	if( parseOptions(argc, argv, &params) == EXIT_FAILURE) {
+		return 0;
+	}
+
 
 	// advance past the option arguments
 	argc 	-= optind;

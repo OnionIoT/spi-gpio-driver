@@ -62,6 +62,9 @@ int spiRegisterDevice (struct spiParams *params)
 		// device file does not exist - register the spi device
 		status	= _spiRegisterDevice(ONION_SEVERITY_INFO, params);
 
+		// wait for device to be registered
+		usleep(500*1000);
+
 		// check that device file exists
 		status	= spiCheckDevice(params->busNum, params->deviceId, ONION_SEVERITY_DEBUG_EXTRA);
 	}
