@@ -19,16 +19,13 @@
 static PyObject *PyOnionSpiError;
 
 
-// LAZAR: CHANGE THIS TEXT
 PyDoc_STRVAR(onionSpi_module_doc,
 	"This module defines an object type that allows SPI transactions\n"
 	"on hosts running the Linux kernel. The host kernel must have SPI\n"
 	"support and SPI device interface support.\n"
 	"All of these can be either built-in to the kernel, or loaded from\n"
 	"modules.\n"
-	"\n"
-	"Because the SPI device interface is opened R/W, users of this\n"
-	"module usually must have root permissions.\n");
+);
 
 typedef struct {
 	PyObject_HEAD
@@ -97,6 +94,11 @@ onionSpi_dealloc(OnionSpiObject *self)
 /*
  * 	Functions being mapped to object functions
  */
+
+static char *wrmsg_list0 	= "Empty argument list.";
+static char *wrmsg_spi 		= "SPI transaction failed.";
+static char *wrmsg_val 		= "Non-Int/Long value in arguments: %x.";
+
 PyDoc_STRVAR(onionSpi_setVerbosity_doc,
 	"setVerbosity(level) -> None\n\n"
 	"Set the verbosity for the object (-1 to 2).\n");
@@ -149,8 +151,9 @@ onionSpi_readBytes(OnionSpiObject *self, PyObject *args)
 	// perform the transfer
 	status 	= spiTransfer(&(self->params), txBuffer, rxBuffer, bytes);
 
-	if (status < 0) {
-		// LAZAR: ERROR MESSAGE
+	if (status != EXIT_SUCCESS) {
+		PyErr_SetString(PyExc_IOError, wrmsg_spi);
+		return NULL;
 	}
 
 	// build the python object to be returned from the rxBuffer
@@ -181,6 +184,7 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 	uint8_t 	*txBuffer;
 	uint8_t 	*rxBuffer;
 	PyObject	*list;
+	char		wrmsg_text[4096];
 
 
 	// parse the arguments
@@ -189,8 +193,7 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 	}
 
 	if (!PyList_Size(list) > 0) {
-		// LAZAR: ERROR MESSAGE
-		//PyErr_SetString(PyExc_TypeError, wrmsg_list0);
+		PyErr_SetString(PyExc_TypeError, wrmsg_list0);
 		return NULL;
 	}
 
@@ -217,9 +220,8 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 			if (PyLong_Check(val)) {
 				txBuffer[i+1] = (uint8_t)PyLong_AS_LONG(val);
 			} else {
-				// LAZAR: ERROR MESSAGE
-				//snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
-				//PyErr_SetString(PyExc_TypeError, wrmsg_text);
+				snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
+				PyErr_SetString(PyExc_TypeError, wrmsg_text);
 				return NULL;
 			}
 		}
@@ -228,8 +230,9 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 	// perform the transfer
 	status 	= spiTransfer(&(self->params), txBuffer, rxBuffer, bytes);
 
-	if (status < 0) {
-		// LAZAR: ERROR MESSAGE
+	if (status != EXIT_SUCCESS) {
+		PyErr_SetString(PyExc_IOError, wrmsg_spi);
+		return NULL;
 	}
 
 	// clean-up
@@ -252,6 +255,7 @@ onionSpi_write(OnionSpiObject *self, PyObject *args)
 	uint8_t 	*txBuffer;
 	uint8_t 	*rxBuffer;
 	PyObject	*list;
+	char		wrmsg_text[4096];
 
 
 	// parse the arguments
@@ -260,8 +264,7 @@ onionSpi_write(OnionSpiObject *self, PyObject *args)
 	}
 
 	if (!PyList_Size(list) > 0) {
-		// LAZAR: ERROR MESSAGE
-		//PyErr_SetString(PyExc_TypeError, wrmsg_list0);
+		PyErr_SetString(PyExc_TypeError, wrmsg_list0);
 		return NULL;
 	}
 
@@ -284,9 +287,8 @@ onionSpi_write(OnionSpiObject *self, PyObject *args)
 			if (PyLong_Check(val)) {
 				txBuffer[i] = (uint8_t)PyLong_AS_LONG(val);
 			} else {
-				// LAZAR: ERROR MESSAGE
-				//snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
-				//PyErr_SetString(PyExc_TypeError, wrmsg_text);
+				snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
+				PyErr_SetString(PyExc_TypeError, wrmsg_text);
 				return NULL;
 			}
 		}
@@ -295,8 +297,9 @@ onionSpi_write(OnionSpiObject *self, PyObject *args)
 	// perform the transfer
 	status 	= spiTransfer(&(self->params), txBuffer, rxBuffer, bytes);
 
-	if (status < 0) {
-		// LAZAR: ERROR MESSAGE
+	if (status != EXIT_SUCCESS) {
+		PyErr_SetString(PyExc_IOError, wrmsg_spi);
+		return NULL;
 	}
 
 	// clean-up
