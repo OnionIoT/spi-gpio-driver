@@ -1,6 +1,15 @@
 # spi-gpio-driver
 Driver to bit-bang SPI protocol through GPIOs
 
+# Default Pin Mapping
+
+| Functionality | GPIO       |
+|---------------|------------|
+| SPI SCK       | 6          |
+| SPI MOSI      | 18         |
+| SPI MISO      | 1          |
+| SPI CS        | 7          |
+
 
 # Example Code
 
