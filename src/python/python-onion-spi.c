@@ -270,7 +270,7 @@ onionSpi_halfWrite(OnionSpiObject *self, PyObject *args)
 	}
 
 	// find size of list
-	// bytes 	= PyList_GET_SIZE(list);
+	bytes 	= PyList_GET_SIZE(list);
 	// bytes++;	// add one for the address
 
 	// allocate the buffers based on the number of bytes

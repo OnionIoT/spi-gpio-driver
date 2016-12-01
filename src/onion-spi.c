@@ -207,7 +207,7 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 // half-duplex write
 int spiHalfWrite(struct spiParams *params, uint8_t *txBuffer, int bytes)
 {
-	int 		status, fd, bytes
+	int 		status, fd;
 
 	// txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
 
@@ -235,7 +235,7 @@ int spiHalfWrite(struct spiParams *params, uint8_t *txBuffer, int bytes)
 // half-duplex read
 int spiHalfRead(struct spiParams *params, uint8_t *rxBuffer, int bytes)
 {
-	int 		status, fd, bytes;
+	int 		status, fd;
 
 	// rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
 
