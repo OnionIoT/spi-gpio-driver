@@ -6,8 +6,6 @@
 #define PyLong_AsLong(val) PyInt_AsLong(val)
 #endif
 
-// here's a random change
-
 // Macros needed for Python 3
 #ifndef PyInt_Check
 #define PyInt_Check			PyLong_Check
@@ -245,6 +243,157 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+// half-duplex write
+yDoc_STRVAR(onionSpi_halfWrite_doc,
+	"halfWrite([values]) -> None\n\n"
+	"Half-duplex write bytes from 'value' list to an SPI device.\n");
+
+static PyObject *
+onionSpi_halfWrite(OnionSpiObject *self, PyObject *args)
+{
+	int 		status, bytes, i;
+	uint8_t 	*txBuffer;
+	// uint8_t 	*rxBuffer;
+	PyObject	*list;
+	char		wrmsg_text[4096];
+
+
+	// parse the arguments
+	if (!PyArg_ParseTuple(args, "iO", &list) ) {
+		return NULL;
+	}
+
+	if (!PyList_Size(list) > 0) {
+		PyErr_SetString(PyExc_TypeError, wrmsg_list0);
+		return NULL;
+	}
+
+	// find size of list
+	// bytes 	= PyList_GET_SIZE(list);
+	// bytes++;	// add one for the address
+
+	// allocate the buffers based on the number of bytes
+	txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+	// rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+	// populate the address
+	// txBuffer[0] 	= (uint8_t)addr;
+
+	// populate the values (by iterating through the list)
+	for (i = 0; i < (bytes); i++) {
+		PyObject *val = PyList_GET_ITEM(list, i);
+#if PY_MAJOR_VERSION < 3
+		if (PyInt_Check(val)) {
+			txBuffer[i] = (uint8_t)PyInt_AS_LONG(val);
+		} else
+#endif
+		{
+			if (PyLong_Check(val)) {
+				txBuffer[i] = (uint8_t)PyLong_AS_LONG(val);
+			} else {
+				snprintf(wrmsg_text, sizeof (wrmsg_text) - 1, wrmsg_val, val);
+				PyErr_SetString(PyExc_TypeError, wrmsg_text);
+				return NULL;
+			}
+		}
+	}
+
+	// perform the transfer
+	status 	= spiHalfWrite(&(self->params), txBuffer, bytes);
+
+	if (status != EXIT_SUCCESS) {
+		PyErr_SetString(PyExc_IOError, wrmsg_spi);
+		return NULL;
+	}
+
+	// clean-up
+	free(txBuffer);
+
+
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+// half-duplex read
+PyDoc_STRVAR(onionSpi_halfRead_doc,
+	"halfRead(numBytes) -> [values]\n\n"
+	"Read 'numBytes' bytes from an SPI device.\n");
+
+static PyObject *
+onionSpi_halfRead(OnionSpiObject *self, PyObject *args)
+{
+	int 		status, addr, bytes, i;
+	// uint8_t 	*txBuffer;
+	uint8_t 	*rxBuffer;
+	PyObject	*list;
+
+
+	// parse the arguments
+	if (!PyArg_ParseTuple(args, "ii", &bytes) ) {
+		return NULL;
+	}
+
+	// allocate the buffers based on the number of bytes
+	// txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+	rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+	// populate the address
+	// *txBuffer 	= (uint8_t)addr;
+
+	// perform the transfer
+	status 	= spiHalfRead(&(self->params), rxBuffer, bytes);
+
+	if (status != EXIT_SUCCESS) {
+		PyErr_SetString(PyExc_IOError, wrmsg_spi);
+		return NULL;
+	}
+
+	// build the python object to be returned from the rxBuffer
+	list = PyList_New(bytes);
+
+	for (i = 0; i < bytes; i++) {
+		PyObject *val = Py_BuildValue("l", (long)rxBuffer[i]);
+		PyList_SET_ITEM(list, i, val);
+	}
+
+	// clean-up
+	// free(txBuffer);
+	free(rxBuffer);
+
+
+	return list;
+}
+
+
+// static PyObject *
+
+// onionSpi_HDwrite(OnionSpiObject *self, PyObject *args)
+// {
+// 	int 		status, bytes, i;
+// 	uint8_t 	*txBuffer;
+
+// 	txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+// 	status = write(fd, txBuffer, bytes);
+// 	free(txBuffer);
+// } 
+
+// half-duplex read
+// static PyObject *
+
+// onionSpi_HDread(OnionSpiObject *self, PyObject *args)
+// {
+// 	int 		status, bytes, i;
+// 	uint8_t 	*rxBuffer;
+
+// 	status = 
+// 	status = read(fd, rxBuffer, bytes);
+// 	free(txBuffer);
+// } 
+
 
 PyDoc_STRVAR(onionSpi_write_doc,
 	"write([values]) -> None\n\n"
@@ -907,6 +1056,9 @@ static PyMethodDef onionSpi_methods[] = {
 
 	{"readBytes", 		(PyCFunction)onionSpi_readBytes, 		METH_VARARGS, 		onionSpi_readBytes_doc},
 	{"writeBytes", 		(PyCFunction)onionSpi_writeBytes, 		METH_VARARGS, 		onionSpi_writeBytes_doc},
+
+	{"halfWrite", 		(PyCFunction)onionSpi_halfWrite, 		METH_VARARGS, 		onionSpi_halfWrite_doc},
+	{"halfRead", 		(PyCFunction)onionSpi_halfRead, 		METH_VARARGS, 		onionSpi_halfRead_doc},
 
 	{"write", 			(PyCFunction)onionSpi_write, 			METH_VARARGS, 		onionSpi_write_doc},
 

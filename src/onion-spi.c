@@ -203,6 +203,65 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 	return status;
 }
 
+
+// half-duplex write
+int spiHalfWrite(struct spiParams *params, uint8_t *txBuffer, int bytes)
+{
+	int 		status, fd, bytes
+
+	// txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+	status 	= _spiGetFd(params->busNum, params->deviceId, &fd, ONION_SEVERITY_FATAL);
+
+	if (status == EXIT_SUCCESS) {
+
+		status = write(fd, txBuffer, bytes);
+
+		if (status != bytes) {
+			onionPrint(ONION_SEVERITY_FATAL, "SPI half-duplex write error, errno is %d: %s\n", errno, strerror(errno));
+			status 	= EXIT_FAILURE;
+		}
+		else {
+			status 	= EXIT_SUCCESS;
+		}
+
+		//free(txBuffer);
+		status 	|= _spiReleaseFd(fd);
+
+	}	
+	return status;
+} 
+
+// half-duplex read
+int spiHalfRead(struct spiParams *params, uint8_t *rxBuffer, int bytes)
+{
+	int 		status, fd, bytes;
+
+	// rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
+
+	status 	= _spiGetFd(params->busNum, params->deviceId, &fd, ONION_SEVERITY_FATAL);
+
+	if (status == EXIT_SUCCESS) {
+
+			status = read(fd, rxBuffer, bytes);
+
+			if (status != bytes) {
+				onionPrint(ONION_SEVERITY_FATAL, "SPI half-duplex read error is %d: %s\n", errno, strerror(errno));
+				status 	= EXIT_FAILURE;
+			}
+			else {
+				status 	= EXIT_SUCCESS;
+			}
+
+			status 	|= _spiReleaseFd(fd);
+	}	
+	return status;
+} 
+
+
+
+
+
 int spiWrite(struct spiParams *params, int addr, uint8_t *wrBuffer, int bytes)
 {
 	int 		status, i;
