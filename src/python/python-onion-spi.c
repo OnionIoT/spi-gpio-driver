@@ -271,12 +271,13 @@ onionSpi_halfWrite(OnionSpiObject *self, PyObject *args)
 
 	// find size of list
 	bytes 	= PyList_GET_SIZE(list);
+	printf ("list size in bytes = %d", bytes);
 	// bytes++;	// add one for the address
 
 	// allocate the buffers based on the number of bytes
 	txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
 	// rxBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
-
+	
 	// populate the address
 	// txBuffer[0] 	= (uint8_t)addr;
 
@@ -286,6 +287,7 @@ onionSpi_halfWrite(OnionSpiObject *self, PyObject *args)
 #if PY_MAJOR_VERSION < 3
 		if (PyInt_Check(val)) {
 			txBuffer[i] = (uint8_t)PyInt_AS_LONG(val);
+			printf ("list item number %i = %u", i, txBuffer[i]);
 		} else
 #endif
 		{
