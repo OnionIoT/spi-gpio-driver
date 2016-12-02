@@ -212,9 +212,11 @@ int spiHalfWrite(struct spiParams *params, uint8_t *txBuffer, int bytes)
 	// txBuffer  	= (uint8_t*)malloc(sizeof(uint8_t) * bytes);
 
 	status 	= _spiGetFd(params->busNum, params->deviceId, &fd, ONION_SEVERITY_FATAL);
+	printf("status after spi initate = %d\n", status);
 
 	if (status == EXIT_SUCCESS) {
 
+		printf("writing to spi ...\n");
 		status = write(fd, txBuffer, bytes);
 
 		if (status != bytes) {
