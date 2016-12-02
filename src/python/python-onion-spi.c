@@ -260,7 +260,7 @@ onionSpi_halfWrite(OnionSpiObject *self, PyObject *args)
 
 
 	// parse the arguments
-	if (!PyArg_ParseTuple(args, "iO", &list) ) {
+	if (!PyArg_ParseTuple(args, "O", &list) ) {
 		return NULL;
 	}
 
@@ -332,7 +332,7 @@ onionSpi_halfRead(OnionSpiObject *self, PyObject *args)
 
 
 	// parse the arguments
-	if (!PyArg_ParseTuple(args, "ii", &bytes) ) {
+	if (!PyArg_ParseTuple(args, "i", &bytes) ) {
 		return NULL;
 	}
 
