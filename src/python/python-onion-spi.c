@@ -245,7 +245,7 @@ onionSpi_writeBytes(OnionSpiObject *self, PyObject *args)
 }
 
 // half-duplex write
-yDoc_STRVAR(onionSpi_halfWrite_doc,
+PyDoc_STRVAR(onionSpi_halfWrite_doc,
 	"halfWrite([values]) -> None\n\n"
 	"Half-duplex write bytes from 'value' list to an SPI device.\n");
 
