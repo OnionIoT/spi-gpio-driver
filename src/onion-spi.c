@@ -331,7 +331,6 @@ int _spiGetFd(int busNum, int devId, int *devHandle, int printSeverity)
 	}
 
 	// create a file descriptor for the I2C bus
-	printf("Write only..\n");
 	if ( (*devHandle = open(pathname, O_WRONLY)) < 0) {
 		onionPrint(printSeverity, "ERROR: could not open sysfs device '%s'\n", pathname);
 		return 	EXIT_FAILURE;
