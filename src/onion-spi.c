@@ -186,7 +186,7 @@ int spiTransfer(struct spiParams *params, uint8_t *txBuffer, uint8_t *rxBuffer, 
 			// send failed
 			onionPrint(ONION_SEVERITY_FATAL, "ERROR: SPI transfer failed\n");
 			*rxBuffer 	= 0;
-			status	== EXIT_FAILURE;
+			status	= EXIT_FAILURE;
 		}
 
 		onionPrint(ONION_SEVERITY_DEBUG, "   Received: 0x%02x, ioctl status: %d\n", *rxBuffer, res);
